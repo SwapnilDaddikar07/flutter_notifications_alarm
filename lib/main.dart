@@ -1,33 +1,41 @@
+import 'dart:io';
+
+import 'package:android_intent_plus/android_intent.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_notifications_alarm/video_screen.dart';
 import 'package:flutter_notifications_alarm/video_service.dart';
-import 'package:timezone/data/latest_all.dart' as tz;
-import 'package:timezone/timezone.dart' as tz;
+import 'package:awesome_notifications/awesome_notifications.dart';
 
-late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
 final GlobalKey<NavigatorState> navKey = GlobalKey<NavigatorState>();
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-  const AndroidInitializationSettings initializationSettingsAndroid =
-      AndroidInitializationSettings("ic_launcher");
-  const InitializationSettings initializationSettings =
-      InitializationSettings(android: initializationSettingsAndroid);
 
-  flutterLocalNotificationsPlugin.initialize(initializationSettings,
-      onDidReceiveNotificationResponse: onDidReceiveNotificationResponse);
+  AwesomeNotifications().initialize(
+      // set the icon to null if you want to use the default app icon
+      'resource://drawable/res_app_icon',
+      [
+        NotificationChannel(
+            channelGroupKey: 'basic_channel_group',
+            channelKey: 'basic_channel',
+            channelName: 'Basic notifications',
+            channelDescription: 'Notification channel for basic tests',
+            defaultColor: Color(0xFF9D50DD),
+            ledColor: Colors.white,
+            importance: NotificationImportance.High)
+      ],
+      debug: true);
+
+  AwesomeNotifications().setListeners(
+      onActionReceivedMethod: NotificationController.onActionReceivedMethod,
+      onNotificationCreatedMethod:
+          NotificationController.onNotificationCreatedMethod,
+      onNotificationDisplayedMethod:
+          NotificationController.onNotificationDisplayedMethod,
+      onDismissActionReceivedMethod:
+          NotificationController.onDismissActionReceivedMethod);
 
   runApp(const MyApp());
-}
-
-void onDidReceiveNotificationResponse(
-    NotificationResponse notificationResponse) async {
-  print("user clicked notification");
-
-  //navKey.currentState?.pushNamed("second_page");
-  navKey.currentState?.pushNamed("video_screen");
 }
 
 class MyApp extends StatelessWidget {
@@ -40,8 +48,7 @@ class MyApp extends StatelessWidget {
       routes: {
         "second_page": (BuildContext context) =>
             const MySecondPage(title: "Second title"),
-        "video_screen": (BuildContext context) =>
-        const VideoPlayerApp()
+        "video_screen": (BuildContext context) => const VideoPlayerApp()
       },
       navigatorKey: navKey,
       title: 'Flutter Demo',
@@ -90,43 +97,32 @@ class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
 
   void _incrementCounter() async {
+    AwesomeNotifications().createNotification(
+        schedule: NotificationCalendar(),
+        content: NotificationContent(
+            id: 10,
+            channelKey: 'basic_channel',
+            title: 'Simple Notification',
+            body: 'Simple body',
+            actionType: ActionType.Default,
+            fullScreenIntent: true,
+            wakeUpScreen: true,
+            icon: 'resource://drawable/ic_launcher'));
+
+    // if (Platform.isAndroid) {
+    //   AndroidIntent intent = const AndroidIntent(
+    //       action: 'android.intent.action.MAIN',
+    //       category: 'android.intent.category.LAUNCHER',
+    //       package: 'com.example.flutter_notifications_alarm',
+    //       componentName:
+    //           'com.example.flutter_notifications_alarm.MainActivity');
+    //   await intent.launch();
+    // }
+
     const List<String> lines = <String>[
       'Alex Faarborg  Check this out',
       'Jeff Chang    Launch Party'
     ];
-
-    const InboxStyleInformation inboxStyleInformation = InboxStyleInformation(
-        lines,
-        contentTitle: '2 messages',
-        summaryText: 'janedoe@example.com');
-
-    const AndroidNotificationDetails androidNotificationDetails =
-        AndroidNotificationDetails('1', 'test_channel',
-            channelDescription: 'test_channel_description',
-            importance: Importance.high,
-            priority: Priority.high,
-            ticker: 'ticker',
-            category: AndroidNotificationCategory.alarm,
-            visibility: NotificationVisibility.public,
-            styleInformation: inboxStyleInformation,
-            fullScreenIntent: true,
-            audioAttributesUsage: AudioAttributesUsage.alarm);
-
-    const NotificationDetails notificationDetails =
-        NotificationDetails(android: androidNotificationDetails);
-
-    tz.initializeTimeZones();
-
-    await flutterLocalNotificationsPlugin.zonedSchedule(
-        0,
-        'Test title',
-        'This is a sample message',
-        tz.TZDateTime.now(tz.local).add(const Duration(seconds: 5)),
-        notificationDetails,
-        payload: 'alarm id',
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
-        androidAllowWhileIdle: true);
 
     setState(() {
       // This call to setState tells the Flutter framework that something has
@@ -188,5 +184,38 @@ class _MyHomePageState extends State<MyHomePage> {
         child: const Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
+  }
+}
+
+class NotificationController {
+  /// Use this method to detect when a new notification or a schedule is created
+  @pragma("vm:entry-point")
+  static Future<void> onNotificationCreatedMethod(
+      ReceivedNotification receivedNotification) async {
+    // Your code goes here
+  }
+
+  /// Use this method to detect every time that a new notification is displayed
+  @pragma("vm:entry-point")
+  static Future<void> onNotificationDisplayedMethod(
+      ReceivedNotification receivedNotification) async {
+    // Your code goes here
+  }
+
+  /// Use this method to detect if the user dismissed a notification
+  @pragma("vm:entry-point")
+  static Future<void> onDismissActionReceivedMethod(
+      ReceivedAction receivedAction) async {
+    // Your code goes here
+  }
+
+  /// Use this method to detect when the user taps on a notification or action button
+  @pragma("vm:entry-point")
+  static Future<void> onActionReceivedMethod(
+      ReceivedAction receivedAction) async {
+    // Your code goes here
+
+    // Navigate into pages, avoiding to open the notification details page over another details page already opened
+    print("user clicked on the notification");
   }
 }
