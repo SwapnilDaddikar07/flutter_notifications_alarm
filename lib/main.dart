@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_notifications_alarm/video_screen.dart';
+import 'package:flutter_notifications_alarm/video_service.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -25,6 +26,7 @@ void onDidReceiveNotificationResponse(
     NotificationResponse notificationResponse) async {
   print("user clicked notification");
 
+  //navKey.currentState?.pushNamed("second_page");
   navKey.currentState?.pushNamed("video_screen");
 }
 
@@ -36,8 +38,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       routes: {
-        "video_screen": (BuildContext context) =>
+        "second_page": (BuildContext context) =>
             const MySecondPage(title: "Second title"),
+        "video_screen": (BuildContext context) =>
+        const VideoPlayerApp()
       },
       navigatorKey: navKey,
       title: 'Flutter Demo',
